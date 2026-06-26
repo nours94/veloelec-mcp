@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>VeloElec recommandations</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    img { max-width: 100%; border-radius: 8px; }
+    .price { font-weight: 700; color: #d1125b; }
+  </style>
+</head>
+<body>
+  <h2>Vélos recommandés</h2>
+  <div id="app">Chargement des recommandations...</div>
+
+  <script>
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      const result = data?.params?.result?.structuredContent || data?.structuredContent;
+      const velos = result?.recommandations || [];
+
+      document.getElementById("app").innerHTML = velos.map(v => `
+        <div class="card">
+          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
+          <h3>${v.nom}</h3>
+          <div class="price">${v.prix} €</div>
+          <p><strong>Score :</strong> ${v.score}</p>
+          <p>${(v.raisons || []).join("<br>")}</p>
+        </div>
+      `).join("") || "Aucune recommandation disponible.";
+    });
+  </script>
+</body>
+</html>
