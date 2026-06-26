@@ -9,6 +9,28 @@ def normaliser(texte):
     return (texte or "").strip().lower()
 
 
+def extraire_velos(data):
+    """
+    Accepte plusieurs formats de réponse du catalogue.
+    """
+
+    if isinstance(data, dict):
+
+        if isinstance(data.get("velos"), list):
+            return data["velos"]
+
+        if isinstance(data.get("resultats"), list):
+            return data["resultats"]
+
+        if isinstance(data.get("data"), list):
+            return data["data"]
+
+    if isinstance(data, list):
+        return data
+
+    return []
+
+
 @mcp.tool()
 def recommander_velos(
     budget_max: int,
@@ -19,7 +41,7 @@ def recommander_velos(
     taille_cm: int | None = None,
 ):
     """
-    Recommande les 3 meilleurs vélos selon le profil utilisateur.
+    Recommande automatiquement les 3 meilleurs vélos.
     """
 
     usage_n = normaliser(usage)
@@ -30,14 +52,17 @@ def recommander_velos(
 
     if usage_n == "famille":
         categorie = "cargo"
+
     elif usage_n == "vtt":
         categorie = "VTT"
+
     elif usage_n in ["travail", "randonnée", "loisir"]:
         categorie = "VTC"
+
     elif usage_n == "ville":
         categorie = "ville"
 
-    budget_avec_marge = int(budget_max * 1.1)
+    budget_avec_marge = int(budget_max * 1.10)
 
     params = {
         "budget_max": budget_avec_marge
@@ -50,11 +75,13 @@ def recommander_velos(
         params["categorie"] = categorie
 
     data = appeler_catalogue(params)
-    velos = data.get("velos", [])
+
+    velos = extraire_velos(data)
 
     recommandations = []
 
     for velo in velos:
+
         score = 0
         raisons = []
         limites = []
@@ -64,59 +91,84 @@ def recommander_velos(
         poids = velo.get("poids") or 99
         batterie = str(velo.get("batterie") or "")
 
+        # Budget
+
         if prix <= budget_max:
             score += 30
             raisons.append("Respecte le budget.")
+
         elif prix <= budget_avec_marge:
             score += 20
-            raisons.append("Reste dans la marge maximale de 10 % du budget.")
+            raisons.append("Dans la marge de 10 %.")
+
         else:
-            limites.append("Dépasse le budget autorisé.")
             continue
 
+        # Relief
+
         if relief_n in ["vallonné", "très vallonné", "chemins", "sentiers"]:
+
             if couple >= 70:
                 score += 25
-                raisons.append("Couple moteur élevé adapté au relief.")
+                raisons.append("Très bon couple moteur.")
+
             elif couple >= 50:
                 score += 15
                 raisons.append("Couple moteur correct.")
+
             else:
-                limites.append("Couple moteur limité pour relief difficile.")
+                limites.append("Couple un peu limité.")
+
+        # Longues distances
 
         if distance_km and distance_km > 40:
-            if any(x in batterie for x in ["700", "720", "730"]):
+
+            if any(x in batterie for x in ["700", "720", "725", "730"]):
                 score += 25
-                raisons.append("Batterie importante pour longues distances.")
-            elif any(x in batterie for x in ["500", "614"]):
+                raisons.append("Grande batterie.")
+
+            elif any(x in batterie for x in ["614", "625", "630", "500"]):
                 score += 15
-                raisons.append("Batterie correcte pour trajets réguliers.")
+                raisons.append("Bonne autonomie.")
+
             else:
-                limites.append("Batterie potentiellement limitée pour longues distances.")
+                limites.append("Autonomie moyenne.")
+
+        # Priorité
 
         if priorite_n == "prix":
-            bonus_prix = max(0, 20 - int(prix / 300))
-            score += bonus_prix
-            raisons.append("Bon positionnement prix.")
+            score += max(0, 20 - int(prix / 300))
 
-        if priorite_n == "puissance" and couple >= 70:
-            score += 20
-            raisons.append("Très bon couple moteur.")
+        elif priorite_n == "puissance":
+
+            if couple >= 70:
+                score += 20
+
+        elif priorite_n == "confort":
+            score += 10
+
+        elif priorite_n == "autonomie":
+            score += 10
+
+        elif priorite_n == "polyvalence":
+            score += 10
+
+        # Poids
 
         if poids < 25:
             score += 10
-            raisons.append("Poids contenu.")
 
-        velo_resultat = {
+        recommandations.append({
             **velo,
             "score": score,
             "raisons": raisons,
             "limites": limites,
-        }
+        })
 
-        recommandations.append(velo_resultat)
-
-    recommandations.sort(key=lambda v: v["score"], reverse=True)
+    recommandations.sort(
+        key=lambda v: v["score"],
+        reverse=True
+    )
 
     return {
         "usage": usage,
@@ -134,6 +186,10 @@ def rechercher_velos(
     taille_cm: int | None = None,
     categorie: str | None = None,
 ):
+    """
+    Recherche simple dans le catalogue.
+    """
+
     params = {}
 
     if budget_max:
@@ -149,10 +205,11 @@ def rechercher_velos(
 
 
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 8000))
 
     mcp.run(
         transport="http",
         host="0.0.0.0",
-        port=port
+        port=port,
     )
