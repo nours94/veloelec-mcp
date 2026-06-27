@@ -1,0 +1,109 @@
+:root {
+  --dark: #111d2c;
+  --pink: #d1125b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 18px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+}
+
+.header {
+  margin-bottom: 18px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.card img {
+  width: 100%;
+  height: 190px;
+  object-fit: contain;
+  background: white;
+  padding: 12px;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.badge {
+  display: inline-block;
+  background: #fce7f3;
+  color: var(--pink);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.price {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--pink);
+  margin-bottom: 10px;
+}
+
+.specs {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.reasons {
+  padding-left: 18px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.reasons li {
+  margin-bottom: 5px;
+}
+
+.empty {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 14px;
+  color: var(--muted);
+}

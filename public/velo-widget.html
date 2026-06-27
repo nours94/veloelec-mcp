@@ -3,33 +3,62 @@
 <head>
   <meta charset="utf-8" />
   <title>VeloElec recommandations</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    img { max-width: 100%; border-radius: 8px; }
-    .price { font-weight: 700; color: #d1125b; }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <h2>Vélos recommandés</h2>
-  <div id="app">Chargement des recommandations...</div>
+  <div class="header">
+    <h1>🚲 Vélos recommandés</h1>
+    <p>Les 3 meilleurs modèles selon votre profil.</p>
+  </div>
+
+  <div id="app" class="grid"></div>
 
   <script>
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      const result = data?.params?.result?.structuredContent || data?.structuredContent;
-      const velos = result?.recommandations || [];
+    function getResult(eventData) {
+      return (
+        eventData?.params?.result?.structuredContent ||
+        eventData?.structuredContent ||
+        eventData?.result ||
+        {}
+      );
+    }
 
-      document.getElementById("app").innerHTML = velos.map(v => `
-        <div class="card">
-          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
-          <h3>${v.nom}</h3>
-          <div class="price">${v.prix} €</div>
-          <p><strong>Score :</strong> ${v.score}</p>
-          <p>${(v.raisons || []).join("<br>")}</p>
-        </div>
-      `).join("") || "Aucune recommandation disponible.";
+    function render(result) {
+      const velos = result?.recommandations || [];
+      const app = document.getElementById("app");
+
+      if (!velos.length) {
+        app.innerHTML = `<div class="empty">Aucune recommandation disponible.</div>`;
+        return;
+      }
+
+      app.innerHTML = velos.map((v, index) => `
+        <article class="card">
+          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom || "Vélo électrique"}">` : ""}
+          <div class="card-body">
+            <span class="badge">#${index + 1} • Score ${v.score || 0}</span>
+            <h2>${v.nom || "Vélo électrique"}</h2>
+            <div class="price">${v.prix || "N/A"} €</div>
+            <div class="specs">
+              <div><strong>Marque :</strong> ${v.marque || "Non renseignée"}</div>
+              <div><strong>Catégorie :</strong> ${v.categorie || "Non renseignée"}</div>
+              <div><strong>Batterie :</strong> ${v.batterie || "Non renseignée"}</div>
+              <div><strong>Couple :</strong> ${v.couple_moteur ? v.couple_moteur + " Nm" : "Non renseigné"}</div>
+              <div><strong>Poids :</strong> ${v.poids ? v.poids + " kg" : "Non renseigné"}</div>
+            </div>
+            <ul class="reasons">
+              ${(v.raisons || []).slice(0, 4).map(r => `<li>${r}</li>`).join("")}
+            </ul>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    window.addEventListener("message", (event) => {
+      render(getResult(event.data));
     });
+
+    render({});
   </script>
 </body>
 </html>
