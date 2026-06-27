@@ -12,37 +12,78 @@
   </div>
 
   <div class="grid">
-    <article class="card">
+    <article class="card action" data-action="recommend">
       <div class="card-body">
         <span class="badge">Assistant IA</span>
         <h2>🔍 Trouver mon vélo</h2>
-        <p>Répondez à quelques questions et obtenez les 3 meilleurs vélos adaptés à votre profil.</p>
+        <p>Obtenez les 3 meilleurs vélos selon votre budget, usage, taille et terrain.</p>
       </div>
     </article>
 
-    <article class="card">
+    <article class="card action" data-action="compare">
       <div class="card-body">
         <span class="badge">Comparateur</span>
         <h2>⚖️ Comparer deux vélos</h2>
-        <p>Analysez prix, moteur, batterie, couple, poids et points forts.</p>
+        <p>Comparez deux modèles sur le prix, moteur, batterie, couple et poids.</p>
       </div>
     </article>
 
-    <article class="card">
+    <article class="card action" data-action="catalog">
       <div class="card-body">
         <span class="badge">Catalogue</span>
         <h2>📚 Explorer le catalogue</h2>
-        <p>Parcourez les vélos électriques disponibles selon votre budget et vos usages.</p>
+        <p>Parcourez les vélos électriques disponibles dans le catalogue.</p>
       </div>
     </article>
 
-    <article class="card">
+    <article class="card action" data-action="profile">
       <div class="card-body">
-        <span class="badge">Favoris</span>
-        <h2>❤️ Mes favoris</h2>
-        <p>Retrouvez les modèles que vous souhaitez comparer ou revoir plus tard.</p>
+        <span class="badge">Profil</span>
+        <h2>👤 Mon profil vélo</h2>
+        <p>Budget, taille, usage principal et préférences.</p>
       </div>
     </article>
   </div>
+
+  <script>
+    function sendToChatGPT(prompt) {
+      if (window.openai?.sendFollowUpMessage) {
+        window.openai.sendFollowUpMessage({
+          prompt,
+          scrollToBottom: true
+        });
+        return;
+      }
+
+      window.parent.postMessage({
+        jsonrpc: "2.0",
+        id: crypto.randomUUID(),
+        method: "ui/message",
+        params: { prompt }
+      }, "*");
+    }
+
+    document.querySelectorAll(".action").forEach((card) => {
+      card.addEventListener("click", () => {
+        const action = card.dataset.action;
+
+        if (action === "recommend") {
+          sendToChatGPT("Aide-moi à trouver le vélo électrique idéal. Pose-moi les questions une par une.");
+        }
+
+        if (action === "compare") {
+          sendToChatGPT("Je veux comparer deux vélos électriques. Demande-moi les deux modèles à comparer.");
+        }
+
+        if (action === "catalog") {
+          sendToChatGPT("Je veux explorer le catalogue de vélos électriques.");
+        }
+
+        if (action === "profile") {
+          sendToChatGPT("Aide-moi à définir mon profil vélo : budget, taille, usage, distance et terrain.");
+        }
+      });
+    });
+  </script>
 </body>
 </html>
