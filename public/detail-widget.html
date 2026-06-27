@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Détail vélo</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="header">
+    <h1>🚲 Détail du vélo</h1>
+    <p>Fiche complète du modèle sélectionné.</p>
+  </div>
+
+  <div id="app"></div>
+
+  <script>
+    function getResult(eventData) {
+      return (
+        eventData?.params?.result?.structuredContent ||
+        eventData?.structuredContent ||
+        eventData?.result ||
+        {}
+      );
+    }
+
+    function render(result) {
+      const v = result?.velo || result;
+      const app = document.getElementById("app");
+
+      if (!v || !v.nom) {
+        app.innerHTML = `<div class="empty">Aucun vélo sélectionné.</div>`;
+        return;
+      }
+
+      app.innerHTML = `
+        <article class="card">
+          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
+          <div class="card-body">
+            <span class="badge">${v.categorie || "Vélo électrique"}</span>
+            <h2>${v.nom}</h2>
+            <div class="price">${v.prix || "N/A"} €</div>
+
+            <div class="specs">
+              <div><strong>Marque :</strong> ${v.marque || "Non renseignée"}</div>
+              <div><strong>Modèle :</strong> ${v.modele || "Non renseigné"}</div>
+              <div><strong>Moteur :</strong> ${v.moteur || "Non renseigné"}</div>
+              <div><strong>Batterie :</strong> ${v.batterie || "Non renseignée"}</div>
+              <div><strong>Autonomie :</strong> ${v.autonomie || "Non renseignée"}</div>
+              <div><strong>Couple :</strong> ${v.couple_moteur ? v.couple_moteur + " Nm" : "Non renseigné"}</div>
+              <div><strong>Poids :</strong> ${v.poids ? v.poids + " kg" : "Non renseigné"}</div>
+            </div>
+
+            <p>${v.description_ia || v.description || ""}</p>
+          </div>
+        </article>
+      `;
+    }
+
+    window.addEventListener("message", (event) => {
+      render(getResult(event.data));
+    });
+
+    render({});
+  </script>
+</body>
+</html>
