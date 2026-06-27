@@ -14,6 +14,13 @@ from tools.recommandation import (
 mcp = FastMCP("VeloElec & Co")
 
 
+def ui_meta(resource_uri: str):
+    return {
+        "ui.resourceUri": resource_uri,
+        "openai/outputTemplate": resource_uri,
+    }
+
+
 @mcp.resource("ui://home.html")
 def home_widget():
     chemin = Path(__file__).parent / "public" / "home.html"
@@ -76,9 +83,7 @@ def recommander_velos(
         "budget_max_avec_marge": budget_avec_marge,
         "nombre_resultats": len(recommandations),
         "recommandations": recommandations[:3],
-        "_meta": {
-            "openai/outputTemplate": "ui://velo-widget.html"
-        }
+        "_meta": ui_meta("ui://velo-widget.html"),
     }
 
 
@@ -112,14 +117,13 @@ def detail_velo(identifiant: str):
             "trouve": False,
             "message": "Aucun vélo trouvé pour cet identifiant.",
             "velo": None,
+            "_meta": ui_meta("ui://detail-widget.html"),
         }
 
     return {
         "trouve": True,
         "velo": velo,
-        "_meta": {
-            "openai/outputTemplate": "ui://detail-widget.html"
-        }
+        "_meta": ui_meta("ui://detail-widget.html"),
     }
 
 
@@ -133,9 +137,7 @@ def comparer_velos(identifiant_1: str, identifiant_2: str):
         "velo_2": velo_2,
         "trouve_1": velo_1 is not None,
         "trouve_2": velo_2 is not None,
-        "_meta": {
-            "openai/outputTemplate": "ui://compare-widget.html"
-        }
+        "_meta": ui_meta("ui://compare-widget.html"),
     }
 
 
