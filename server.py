@@ -14,6 +14,12 @@ from tools.recommandation import (
 mcp = FastMCP("VeloElec & Co")
 
 
+@mcp.resource("ui://home.html")
+def home_widget():
+    chemin = Path(__file__).parent / "public" / "home.html"
+    return chemin.read_text(encoding="utf-8")
+
+
 @mcp.resource("ui://velo-widget.html")
 def velo_widget():
     chemin = Path(__file__).parent / "public" / "velo-widget.html"
