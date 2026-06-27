@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 from tools.catalogue import appeler_catalogue
+from tools.detail import trouver_velo
 from tools.recommandation import (
     determiner_categorie,
     extraire_velos,
@@ -15,6 +16,12 @@ mcp = FastMCP("VeloElec & Co")
 @mcp.resource("ui://velo-widget.html")
 def velo_widget():
     chemin = Path(__file__).parent / "public" / "velo-widget.html"
+    return chemin.read_text(encoding="utf-8")
+
+
+@mcp.resource("ui://detail-widget.html")
+def detail_widget():
+    chemin = Path(__file__).parent / "public" / "detail-widget.html"
     return chemin.read_text(encoding="utf-8")
 
 
@@ -80,6 +87,27 @@ def rechercher_velos(
         params["categorie"] = categorie
 
     return appeler_catalogue(params)
+
+
+@mcp.tool()
+def detail_velo(identifiant: str):
+    data = appeler_catalogue({})
+    velo = trouver_velo(data, identifiant)
+
+    if not velo:
+        return {
+            "trouve": False,
+            "message": "Aucun vélo trouvé pour cet identifiant.",
+            "velo": None,
+        }
+
+    return {
+        "trouve": True,
+        "velo": velo,
+        "_meta": {
+            "openai/outputTemplate": "ui://detail-widget.html"
+        }
+    }
 
 
 if __name__ == "__main__":
