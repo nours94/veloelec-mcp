@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Comparaison vélos</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="header">
+    <h1>⚖️ Comparaison</h1>
+    <p>Comparez deux vélos côte à côte.</p>
+  </div>
+
+  <div id="app" class="grid"></div>
+
+  <script>
+    function getResult(eventData) {
+      return eventData?.params?.result?.structuredContent || eventData?.structuredContent || eventData?.result || {};
+    }
+
+    function card(v, titre) {
+      if (!v) return `<div class="empty">${titre} introuvable.</div>`;
+      return `
+        <article class="card">
+          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
+          <div class="card-body">
+            <span class="badge">${titre}</span>
+            <h2>${v.nom}</h2>
+            <div class="price">${v.prix || "N/A"} €</div>
+            <div class="specs">
+              <div><strong>Marque :</strong> ${v.marque || "Non renseignée"}</div>
+              <div><strong>Catégorie :</strong> ${v.categorie || "Non renseignée"}</div>
+              <div><strong>Batterie :</strong> ${v.batterie || "Non renseignée"}</div>
+              <div><strong>Couple :</strong> ${v.couple_moteur ? v.couple_moteur + " Nm" : "Non renseigné"}</div>
+              <div><strong>Poids :</strong> ${v.poids ? v.poids + " kg" : "Non renseigné"}</div>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function render(result) {
+      document.getElementById("app").innerHTML =
+        card(result.velo_1, "Vélo 1") + card(result.velo_2, "Vélo 2");
+    }
+
+    window.addEventListener("message", (event) => render(getResult(event.data)));
+    render({});
+  </script>
+</body>
+</html>

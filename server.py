@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 from tools.catalogue import appeler_catalogue
+from tools.comparaison import comparer
 from tools.detail import trouver_velo
 from tools.recommandation import (
     determiner_categorie,
@@ -22,6 +23,12 @@ def velo_widget():
 @mcp.resource("ui://detail-widget.html")
 def detail_widget():
     chemin = Path(__file__).parent / "public" / "detail-widget.html"
+    return chemin.read_text(encoding="utf-8")
+
+
+@mcp.resource("ui://compare-widget.html")
+def compare_widget():
+    chemin = Path(__file__).parent / "public" / "compare-widget.html"
     return chemin.read_text(encoding="utf-8")
 
 
@@ -106,6 +113,22 @@ def detail_velo(identifiant: str):
         "velo": velo,
         "_meta": {
             "openai/outputTemplate": "ui://detail-widget.html"
+        }
+    }
+
+
+@mcp.tool()
+def comparer_velos(identifiant_1: str, identifiant_2: str):
+    data = appeler_catalogue({})
+    velo_1, velo_2 = comparer(data, identifiant_1, identifiant_2)
+
+    return {
+        "velo_1": velo_1,
+        "velo_2": velo_2,
+        "trouve_1": velo_1 is not None,
+        "trouve_2": velo_2 is not None,
+        "_meta": {
+            "openai/outputTemplate": "ui://compare-widget.html"
         }
     }
 
