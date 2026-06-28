@@ -7,8 +7,8 @@
 </head>
 <body>
   <div class="header">
-    <h1>🚲 Détail du vélo</h1>
-    <p>Fiche complète du modèle sélectionné.</p>
+    <h1>📄 Fiche vélo</h1>
+    <p>Détail complet du modèle sélectionné.</p>
   </div>
 
   <div id="app"></div>
@@ -23,6 +23,53 @@
       );
     }
 
+    function escapeText(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    async function callToolOrMessage(toolName, args, fallbackPrompt) {
+      if (window.openai?.callTool) {
+        await window.openai.callTool(toolName, args);
+        return;
+      }
+
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({
+          prompt: fallbackPrompt,
+          scrollToBottom: true
+        });
+        return;
+      }
+
+      window.parent.postMessage({
+        jsonrpc: "2.0",
+        id: crypto.randomUUID(),
+        method: "ui/message",
+        params: { prompt: fallbackPrompt }
+      }, "*");
+    }
+
+    async function comparer(identifiant) {
+      await callToolOrMessage(
+        "comparer_velos",
+        { identifiant_1: identifiant, identifiant_2: "" },
+        `Je veux comparer le vélo ${identifiant} avec un autre modèle. Demande-moi lequel.`
+      );
+    }
+
+    async function nouvelleReco() {
+      if (window.openai?.sendFollowUpMessage) {
+        await window.openai.sendFollowUpMessage({
+          prompt: "Aide-moi à trouver un autre vélo électrique adapté à mon profil.",
+          scrollToBottom: true
+        });
+      }
+    }
+
     function render(result) {
       const v = result?.velo || result;
       const app = document.getElementById("app");
@@ -32,25 +79,45 @@
         return;
       }
 
+      const identifiant = escapeText(v.id || v.modele || v.nom || "");
+      const nom = escapeText(v.nom || "Vélo électrique");
+      const image = escapeText(v.image_url || "");
+      const description = escapeText(v.description_ia || v.description || "");
+
       app.innerHTML = `
         <article class="card">
-          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
+          ${image ? `<img src="${image}" alt="${nom}">` : ""}
+
           <div class="card-body">
-            <span class="badge">${v.categorie || "Vélo électrique"}</span>
-            <h2>${v.nom}</h2>
+            <span class="badge">${escapeText(v.categorie || "Vélo électrique")}</span>
+            <h2>${nom}</h2>
             <div class="price">${v.prix || "N/A"} €</div>
 
             <div class="specs">
-              <div><strong>Marque :</strong> ${v.marque || "Non renseignée"}</div>
-              <div><strong>Modèle :</strong> ${v.modele || "Non renseigné"}</div>
-              <div><strong>Moteur :</strong> ${v.moteur || "Non renseigné"}</div>
-              <div><strong>Batterie :</strong> ${v.batterie || "Non renseignée"}</div>
-              <div><strong>Autonomie :</strong> ${v.autonomie || "Non renseignée"}</div>
+              <div><strong>Marque :</strong> ${escapeText(v.marque || "Non renseignée")}</div>
+              <div><strong>Modèle :</strong> ${escapeText(v.modele || "Non renseigné")}</div>
+              <div><strong>Moteur :</strong> ${escapeText(v.moteur || "Non renseigné")}</div>
+              <div><strong>Batterie :</strong> ${escapeText(v.batterie || "Non renseignée")}</div>
+              <div><strong>Autonomie :</strong> ${escapeText(v.autonomie || "Non renseignée")}</div>
               <div><strong>Couple :</strong> ${v.couple_moteur ? v.couple_moteur + " Nm" : "Non renseigné"}</div>
               <div><strong>Poids :</strong> ${v.poids ? v.poids + " kg" : "Non renseigné"}</div>
             </div>
 
-            <p>${v.description_ia || v.description || ""}</p>
+            ${description ? `<p>${description}</p>` : ""}
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+              <button
+                style="border:0; border-radius:999px; padding:10px 12px; background:#111d2c; color:white; cursor:pointer;"
+                onclick="comparer('${identifiant}')">
+                Comparer
+              </button>
+
+              <button
+                style="border:1px solid #e2e8f0; border-radius:999px; padding:10px 12px; background:white; color:#111d2c; cursor:pointer;"
+                onclick="nouvelleReco()">
+                Nouvelle recommandation
+              </button>
+            </div>
           </div>
         </article>
       `;
