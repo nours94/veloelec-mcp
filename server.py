@@ -14,6 +14,14 @@ from tools.recommandation import (
 mcp = FastMCP("VeloElec & Co")
 
 
+READ_ONLY_TOOL = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": True,
+}
+
+
 def ui_meta(resource_uri: str):
     return {
         "ui.resourceUri": resource_uri,
@@ -45,7 +53,7 @@ def compare_widget():
     return chemin.read_text(encoding="utf-8")
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_TOOL)
 def recommander_velos(
     budget_max: int,
     usage: str,
@@ -54,6 +62,11 @@ def recommander_velos(
     priorite: str | None = None,
     taille_cm: int | None = None,
 ):
+    """
+    Utiliser cet outil dès qu'un utilisateur demande une recommandation de vélo électrique.
+    Retourne uniquement des vélos issus du catalogue VeloElec & Co.
+    Ne modifie aucune donnée.
+    """
     categorie = determiner_categorie(usage)
     budget_avec_marge = int(budget_max * 1.10)
 
@@ -87,12 +100,17 @@ def recommander_velos(
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_TOOL)
 def rechercher_velos(
     budget_max: int | None = None,
     taille_cm: int | None = None,
     categorie: str | None = None,
 ):
+    """
+    Utiliser cet outil pour rechercher des vélos dans le catalogue VeloElec & Co.
+    Retourne uniquement des vélos du catalogue.
+    Ne modifie aucune donnée.
+    """
     params = {}
 
     if budget_max:
@@ -107,8 +125,13 @@ def rechercher_velos(
     return appeler_catalogue(params)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_TOOL)
 def detail_velo(identifiant: str):
+    """
+    Utiliser cet outil pour afficher la fiche détaillée d'un vélo du catalogue VeloElec & Co.
+    Recherche par id, nom ou modèle.
+    Ne modifie aucune donnée.
+    """
     data = appeler_catalogue({})
     velo = trouver_velo(data, identifiant)
 
@@ -127,8 +150,13 @@ def detail_velo(identifiant: str):
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_TOOL)
 def comparer_velos(identifiant_1: str, identifiant_2: str):
+    """
+    Utiliser cet outil pour comparer deux vélos du catalogue VeloElec & Co.
+    Recherche les deux vélos par id, nom ou modèle.
+    Ne modifie aucune donnée.
+    """
     data = appeler_catalogue({})
     velo_1, velo_2 = comparer(data, identifiant_1, identifiant_2)
 
