@@ -16,7 +16,7 @@
       <div class="card-body">
         <span class="badge">Assistant IA</span>
         <h2>🔍 Trouver mon vélo</h2>
-        <p>Obtenez les 3 meilleurs vélos selon votre budget, usage, taille et terrain.</p>
+        <p>Obtenez les 3 meilleurs vélos adaptés à votre budget, usage, taille et terrain.</p>
       </div>
     </article>
 
@@ -24,7 +24,7 @@
       <div class="card-body">
         <span class="badge">Comparateur</span>
         <h2>⚖️ Comparer deux vélos</h2>
-        <p>Comparez deux modèles sur le prix, moteur, batterie, couple et poids.</p>
+        <p>Comparez deux modèles sur le prix, la batterie, le moteur, le couple et le poids.</p>
       </div>
     </article>
 
@@ -32,7 +32,7 @@
       <div class="card-body">
         <span class="badge">Catalogue</span>
         <h2>📚 Explorer le catalogue</h2>
-        <p>Parcourez les vélos électriques disponibles dans le catalogue.</p>
+        <p>Parcourez les vélos électriques disponibles selon vos critères.</p>
       </div>
     </article>
 
@@ -40,15 +40,15 @@
       <div class="card-body">
         <span class="badge">Profil</span>
         <h2>👤 Mon profil vélo</h2>
-        <p>Budget, taille, usage principal et préférences.</p>
+        <p>Définissez votre budget, votre taille, vos usages et vos priorités.</p>
       </div>
     </article>
   </div>
 
   <script>
-    function sendToChatGPT(prompt) {
+    async function sendMessage(prompt) {
       if (window.openai?.sendFollowUpMessage) {
-        window.openai.sendFollowUpMessage({
+        await window.openai.sendFollowUpMessage({
           prompt,
           scrollToBottom: true
         });
@@ -64,23 +64,23 @@
     }
 
     document.querySelectorAll(".action").forEach((card) => {
-      card.addEventListener("click", () => {
+      card.addEventListener("click", async () => {
         const action = card.dataset.action;
 
         if (action === "recommend") {
-          sendToChatGPT("Aide-moi à trouver le vélo électrique idéal. Pose-moi les questions une par une.");
+          await sendMessage("Aide-moi à trouver le vélo électrique idéal. Pose-moi les questions une par une : budget, usage, distance, terrain, priorité et taille.");
         }
 
         if (action === "compare") {
-          sendToChatGPT("Je veux comparer deux vélos électriques. Demande-moi les deux modèles à comparer.");
+          await sendMessage("Je veux comparer deux vélos électriques. Demande-moi les deux modèles à comparer.");
         }
 
         if (action === "catalog") {
-          sendToChatGPT("Je veux explorer le catalogue de vélos électriques.");
+          await sendMessage("Je veux explorer le catalogue de vélos électriques. Demande-moi mon budget et le type de vélo recherché.");
         }
 
         if (action === "profile") {
-          sendToChatGPT("Aide-moi à définir mon profil vélo : budget, taille, usage, distance et terrain.");
+          await sendMessage("Aide-moi à définir mon profil vélo : budget, taille, usage principal, distance quotidienne, terrain et priorité.");
         }
       });
     });
