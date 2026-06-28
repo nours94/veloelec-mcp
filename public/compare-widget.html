@@ -1,51 +1,174 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <title>Comparaison vélos</title>
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="utf-8">
+<title>Comparaison de vélos</title>
+<link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
-  <div class="header">
+
+<div class="header">
     <h1>⚖️ Comparaison</h1>
-    <p>Comparez deux vélos côte à côte.</p>
-  </div>
+    <p>Comparez deux vélos électriques.</p>
+</div>
 
-  <div id="app" class="grid"></div>
+<div id="app" class="grid"></div>
 
-  <script>
-    function getResult(eventData) {
-      return eventData?.params?.result?.structuredContent || eventData?.structuredContent || eventData?.result || {};
+<script>
+
+function getResult(eventData){
+    return (
+        eventData?.params?.result?.structuredContent ||
+        eventData?.structuredContent ||
+        eventData?.result ||
+        {}
+    );
+}
+
+function escapeHtml(text){
+    return String(text ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;");
+}
+
+async function ouvrirDetail(id){
+
+    if(window.openai?.callTool){
+
+        await window.openai.callTool(
+            "detail_velo",
+            {
+                identifiant:id
+            }
+        );
+
+        return;
     }
 
-    function card(v, titre) {
-      if (!v) return `<div class="empty">${titre} introuvable.</div>`;
-      return `
-        <article class="card">
-          ${v.image_url ? `<img src="${v.image_url}" alt="${v.nom}">` : ""}
-          <div class="card-body">
+    if(window.openai?.sendFollowUpMessage){
+
+        await window.openai.sendFollowUpMessage({
+            prompt:`Montre-moi la fiche détaillée du vélo ${id}`
+        });
+
+    }
+
+}
+
+function carte(velo,titre){
+
+    if(!velo){
+
+        return `
+        <div class="empty">
+            ${titre}<br><br>
+            Aucun vélo.
+        </div>
+        `;
+
+    }
+
+    const identifiant=escapeHtml(
+        velo.id ||
+        velo.modele ||
+        velo.nom
+    );
+
+    return `
+
+    <article class="card">
+
+        ${
+            velo.image_url
+            ? `<img src="${escapeHtml(velo.image_url)}">`
+            : ""
+        }
+
+        <div class="card-body">
+
             <span class="badge">${titre}</span>
-            <h2>${v.nom}</h2>
-            <div class="price">${v.prix || "N/A"} €</div>
-            <div class="specs">
-              <div><strong>Marque :</strong> ${v.marque || "Non renseignée"}</div>
-              <div><strong>Catégorie :</strong> ${v.categorie || "Non renseignée"}</div>
-              <div><strong>Batterie :</strong> ${v.batterie || "Non renseignée"}</div>
-              <div><strong>Couple :</strong> ${v.couple_moteur ? v.couple_moteur + " Nm" : "Non renseigné"}</div>
-              <div><strong>Poids :</strong> ${v.poids ? v.poids + " kg" : "Non renseigné"}</div>
+
+            <h2>${escapeHtml(velo.nom)}</h2>
+
+            <div class="price">
+                ${velo.prix ?? "-"} €
             </div>
-          </div>
-        </article>
-      `;
-    }
 
-    function render(result) {
-      document.getElementById("app").innerHTML =
-        card(result.velo_1, "Vélo 1") + card(result.velo_2, "Vélo 2");
-    }
+            <div class="specs">
 
-    window.addEventListener("message", (event) => render(getResult(event.data)));
-    render({});
-  </script>
+                <div><strong>Marque :</strong> ${escapeHtml(velo.marque)}</div>
+
+                <div><strong>Catégorie :</strong> ${escapeHtml(velo.categorie)}</div>
+
+                <div><strong>Batterie :</strong> ${escapeHtml(velo.batterie)}</div>
+
+                <div><strong>Couple :</strong>
+                ${
+                    velo.couple_moteur
+                    ? velo.couple_moteur+" Nm"
+                    : "-"
+                }
+                </div>
+
+                <div><strong>Poids :</strong>
+                ${
+                    velo.poids
+                    ? velo.poids+" kg"
+                    : "-"
+                }
+                </div>
+
+            </div>
+
+            <div style="margin-top:18px">
+
+                <button
+                onclick="ouvrirDetail('${identifiant}')"
+                style="
+                    background:#111d2c;
+                    color:white;
+                    border:none;
+                    border-radius:999px;
+                    padding:10px 18px;
+                    cursor:pointer;
+                ">
+                    Voir le détail
+                </button>
+
+            </div>
+
+        </div>
+
+    </article>
+
+    `;
+
+}
+
+function render(result){
+
+    document.getElementById("app").innerHTML=
+
+        carte(result.velo_1,"Vélo 1")+
+
+        carte(result.velo_2,"Vélo 2");
+
+}
+
+window.addEventListener("message",(event)=>{
+
+    render(
+        getResult(event.data)
+    );
+
+});
+
+render({});
+
+</script>
+
 </body>
 </html>
