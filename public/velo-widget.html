@@ -23,10 +23,23 @@
       );
     }
 
-    function sendToChatGPT(prompt) {
+    function escapeText(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    async function callToolOrMessage(toolName, args, fallbackPrompt) {
+      if (window.openai?.callTool) {
+        await window.openai.callTool(toolName, args);
+        return;
+      }
+
       if (window.openai?.sendFollowUpMessage) {
-        window.openai.sendFollowUpMessage({
-          prompt,
+        await window.openai.sendFollowUpMessage({
+          prompt: fallbackPrompt,
           scrollToBottom: true
         });
         return;
@@ -36,16 +49,27 @@
         jsonrpc: "2.0",
         id: crypto.randomUUID(),
         method: "ui/message",
-        params: { prompt }
+        params: { prompt: fallbackPrompt }
       }, "*");
     }
 
-    function escapeText(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+    async function voirDetail(identifiant) {
+      await callToolOrMessage(
+        "detail_velo",
+        { identifiant },
+        `Montre-moi la fiche détaillée du vélo ${identifiant}`
+      );
+    }
+
+    async function comparerAvecAutre(identifiant) {
+      await callToolOrMessage(
+        "comparer_velos",
+        {
+          identifiant_1: identifiant,
+          identifiant_2: ""
+        },
+        `Je veux comparer le vélo ${identifiant} avec un autre modèle. Demande-moi lequel.`
+      );
     }
 
     function render(result) {
@@ -53,17 +77,13 @@
       const app = document.getElementById("app");
 
       if (!velos.length) {
-        app.innerHTML = `
-          <div class="empty">
-            Aucune recommandation disponible.
-          </div>
-        `;
+        app.innerHTML = `<div class="empty">Aucune recommandation disponible.</div>`;
         return;
       }
 
       app.innerHTML = velos.map((v, index) => {
+        const identifiant = escapeText(v.id || v.modele || v.nom || "");
         const nom = escapeText(v.nom || "Vélo électrique");
-        const modele = escapeText(v.modele || v.nom || "");
         const marque = escapeText(v.marque || "Non renseignée");
         const categorie = escapeText(v.categorie || "Non renseignée");
         const batterie = escapeText(v.batterie || "Non renseignée");
@@ -80,9 +100,7 @@
 
             <div class="card-body">
               <span class="badge">#${index + 1} • Score ${score}/100</span>
-
               <h2>${nom}</h2>
-
               <div class="price">${prix} €</div>
 
               <div class="specs">
@@ -100,20 +118,14 @@
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
                 <button
                   style="border:0; border-radius:999px; padding:10px 12px; background:#111d2c; color:white; cursor:pointer;"
-                  onclick="sendToChatGPT('Montre-moi la fiche détaillée du vélo ${modele || nom}')">
+                  onclick="voirDetail('${identifiant}')">
                   Détails
                 </button>
 
                 <button
                   style="border:1px solid #e2e8f0; border-radius:999px; padding:10px 12px; background:white; color:#111d2c; cursor:pointer;"
-                  onclick="sendToChatGPT('Je veux comparer le vélo ${modele || nom} avec un autre modèle. Demande-moi lequel.')">
+                  onclick="comparerAvecAutre('${identifiant}')">
                   Comparer
-                </button>
-
-                <button
-                  style="border:1px solid #fbcfe8; border-radius:999px; padding:10px 12px; background:#fdf2f8; color:#d1125b; cursor:pointer;"
-                  onclick="sendToChatGPT('Ajoute ${modele || nom} à mes favoris quand la fonction favoris sera disponible.')">
-                  ❤️ Favori
                 </button>
               </div>
             </div>
