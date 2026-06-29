@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from fastmcp import FastMCP
-from tools.catalogue import appeler_catalogue
+from tools.catalogue import appeler_catalogue, appeler_catalogue_cible, CatalogueError
 from tools.comparaison import comparer
 from tools.detail import trouver_velo
 from tools.recommandation import (
@@ -78,7 +78,19 @@ def recommander_velos(
     if categorie:
         params["categorie"] = categorie
 
-    data = appeler_catalogue(params)
+    try:
+        data = appeler_catalogue(params)
+    except CatalogueError as e:
+        return {
+            "erreur": str(e),
+            "usage": usage,
+            "categorie_utilisee": categorie,
+            "budget_initial": budget_max,
+            "nombre_resultats": 0,
+            "recommandations": [],
+            "_meta": ui_meta("ui://velo-widget.html"),
+        }
+
     velos = extraire_velos(data)
 
     recommandations = calculer_recommandations(
@@ -122,7 +134,13 @@ def rechercher_velos(
     if categorie:
         params["categorie"] = categorie
 
-    return appeler_catalogue(params)
+    try:
+        return appeler_catalogue(params)
+    except CatalogueError as e:
+        return {
+            "erreur": str(e),
+            "velos": [],
+        }
 
 
 @mcp.tool(annotations=READ_ONLY_TOOL)
@@ -132,8 +150,32 @@ def detail_velo(identifiant: str):
     Recherche par id, nom ou modèle.
     Ne modifie aucune donnée.
     """
-    data = appeler_catalogue({})
+    try:
+        data = appeler_catalogue_cible(identifiant)
+    except CatalogueError as e:
+        return {
+            "trouve": False,
+            "erreur": str(e),
+            "velo": None,
+            "_meta": ui_meta("ui://detail-widget.html"),
+        }
+
     velo = trouver_velo(data, identifiant)
+
+    if not velo:
+        # Repli : l'identifiant ne correspond peut-être à aucun mot-clé
+        # indexé côté SQL (ex. un id technique "velo-042"), on retente
+        # alors sur le catalogue complet avant de conclure à une absence.
+        try:
+            data_complet = appeler_catalogue({})
+        except CatalogueError as e:
+            return {
+                "trouve": False,
+                "erreur": str(e),
+                "velo": None,
+                "_meta": ui_meta("ui://detail-widget.html"),
+            }
+        velo = trouver_velo(data_complet, identifiant)
 
     if not velo:
         return {
@@ -157,8 +199,38 @@ def comparer_velos(identifiant_1: str, identifiant_2: str):
     Recherche les deux vélos par id, nom ou modèle.
     Ne modifie aucune donnée.
     """
-    data = appeler_catalogue({})
-    velo_1, velo_2 = comparer(data, identifiant_1, identifiant_2)
+    try:
+        data_1 = appeler_catalogue_cible(identifiant_1)
+        data_2 = appeler_catalogue_cible(identifiant_2)
+    except CatalogueError as e:
+        return {
+            "erreur": str(e),
+            "velo_1": None,
+            "velo_2": None,
+            "trouve_1": False,
+            "trouve_2": False,
+            "_meta": ui_meta("ui://compare-widget.html"),
+        }
+
+    velos_fusionnes = extraire_velos(data_1) + extraire_velos(data_2)
+    velo_1, velo_2 = comparer({"velos": velos_fusionnes}, identifiant_1, identifiant_2)
+
+    if velo_1 is None or velo_2 is None:
+        # Repli : un des deux identifiants n'a peut-être pas matché de
+        # mot-clé indexé côté SQL (ex. id technique), on retente sur le
+        # catalogue complet avant de conclure à une absence.
+        try:
+            data_complet = appeler_catalogue({})
+        except CatalogueError as e:
+            return {
+                "erreur": str(e),
+                "velo_1": velo_1,
+                "velo_2": velo_2,
+                "trouve_1": velo_1 is not None,
+                "trouve_2": velo_2 is not None,
+                "_meta": ui_meta("ui://compare-widget.html"),
+            }
+        velo_1, velo_2 = comparer(data_complet, identifiant_1, identifiant_2)
 
     return {
         "velo_1": velo_1,
