@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 from tools.catalogue import appeler_catalogue, appeler_catalogue_cible, CatalogueError
 from tools.comparaison import comparer
 from tools.detail import trouver_velo
@@ -12,6 +14,16 @@ from tools.recommandation import (
 )
 
 mcp = FastMCP("VeloElec & Co")
+
+
+@mcp.custom_route("/.well-known/openai-apps-challenge", methods=["GET"])
+async def openai_apps_challenge(request: Request) -> PlainTextResponse:
+    """
+    Route de vérification de domaine pour la soumission de l'app
+    VeloElec & Co dans le répertoire ChatGPT Apps.
+    Renvoie le token fourni par OpenAI en texte brut.
+    """
+    return PlainTextResponse("UqD8PGAGCGAC00U2KAg01IIw-REqTgCK2aRtQ9CNgDQ")
 
 
 READ_ONLY_TOOL = {
